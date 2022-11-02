@@ -1,32 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useLoaderData, useParams } from "react-router-dom";
+import { connect, relay } from "../../soccer_api/SignalingServer";
+import { Container, ItemsLoading, Loading } from "./styles";
 import NameUser from "../NameUser/NameUser";
+import Game from "../Game/Game";
 
-// register and get the token adding it to context
-async function getToken() {
-    let res = await fetch(process.env.REACT_APP_API+'/access', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            username: window.localStorage.getItem('username')
-        })
-    });
-    let token = await res.json();
-    window.localStorage.setItem('user-token', token);
-}
 
-// joining room in the server (this is used when server send the connected event)
-async function join(roomId) {
-    return fetch(`${process.env.REACT_APP_API}/${roomId}/join`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${window.localStorage.getItem('user-token')}`
-        }
-    });
-}
 
 // Choosing the STUN servers
 const rtcConfig = {
@@ -41,57 +20,23 @@ const rtcConfig = {
 function LoadingConnection() {
     const params = useParams();
     const {roomId} = params;
+
     let roomExists = useLoaderData();
+
     const wsConnection = useRef(null);
-    const [peers, setPeers] = useState({});
-    const [channels, setChannels] = useState({});
+    const peers = useRef({});
+    const channels = useRef({});
+    const [loading, setLoading] = useState([]);
+    const [peerData, setPeerData] = useState([]);
 
     if(roomExists === 'Not Found') {
         throw new Error('Room not found!');
     }
 
     useEffect(() => {
-        async function setConnection() {
-            console.log('Authorizing...');
-            await getToken();
-            console.log('Authorized!');
-
-            const url = process.env.REACT_APP_API.split('//');
-            const wsURL = encodeURI(`${url[0] === 'https:' ? 'wss' : 'ws'}://${url[1].substring(-1)}?token=${window.localStorage.getItem('user-token')}`);
-            console.log('Opening connection...');
-            wsConnection.current = new WebSocket(wsURL, 'json');
-    
-            wsConnection.current.onopen = (data) => {
-                console.log('Connection open!');
-            }
-    
-            wsConnection.current.onmessage = (messageevent) => {
-                const data = JSON.parse(messageevent.data);
-                // eslint-disable-next-line default-case
-                switch(data.type){
-                    case 'connected':
-                        console.log('Joining room...');
-                        join(roomId);
-                        console.log('Joined!');
-                        //logMessage(`Bem-vindo, ${context.username}`, 'green');
-                        break;
-                    case 'add-peer':
-                        addPeer(data);
-                        break;
-                    case 'session-description':
-                        sessionDescription(data);
-                        break;
-                    case 'ice-candidate':
-                        iceCandidate(data);
-                        break;
-                    case 'remove-peer':
-                        removePeer(data);
-                        break;
-                }
-            };
-        }
+        setLoading([]);
         if(window.localStorage.getItem('username'))
-            setConnection();
+            connect(wsConnection, roomId, addPeer, sessionDescription, iceCandidate, removePeer, [loading, setLoading]);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -99,21 +44,23 @@ function LoadingConnection() {
         return <NameUser joiningDirectToRoom={true} />
     }
 
+    const loaded = loading.map((load) =>
+        <ItemsLoading key={load}>{load}</ItemsLoading>
+    );
 
     function addPeer(data) {
         const {peer: peerToAdd, offer} = data;
-    
+        console.log(peers.current, 'peers');
+        console.log('Adding: ', peerToAdd);
         // if incoming peer is already in context, cancel the operation
-        if (peers[peerToAdd]) {
+        if (peers.current[peerToAdd]) {
             return;
         }
     
         // setup peer connection
         let peer = new RTCPeerConnection(rtcConfig);
-        setPeers({
-            ...peers,
-            [`${peerToAdd.id}`]: peer
-        });
+        peers.current[`${peerToAdd.id}`] = peer;
+        console.log('after adding to peers: ', peers.current);
     
         // handle ice candidate
         peer.onicecandidate = function (event) {
@@ -129,23 +76,18 @@ function LoadingConnection() {
             let channel = peer.createDataChannel('updates');
             channel.onmessage = function (event) {
                 //onPeerData(peerToAdd.id, event.data);
+                setPeerData([peerToAdd.id, event.data]);
                 console.log(peerToAdd.id, event.data);
             };
-            setChannels({
-                ...channels,
-                [`${peerToAdd.id}`]: channel,
-            });
+            channels.current[`${peerToAdd.id}`] = channel;
             createOfferAndSetLocalDescription(peerToAdd.id, peer);
         } else {
             //logMessage(`${peerToAdd.username} entrou na sala!`, 'green');
             peer.ondatachannel = function (event) {
-                setChannels({
-                    ...channels,
-                    [`${peerToAdd.id}`]: event.channel,
-                });
+                channels.current[`${peerToAdd.id}`] = event.channel;
                 event.channel.onmessage = function (evt) {
-                    //onPeerData(peerToAdd.id, evt.data);
-                    console.log(peerToAdd.id, event.data);
+                    setPeerData([peerToAdd.id, evt.data]);
+                    console.log(peerToAdd.id, evt.data);
                 };
             };
         }
@@ -158,22 +100,12 @@ function LoadingConnection() {
         await relay(peerId, 'session-description', offer);
     }
 
-    // peerId: peer target, send info to server, and server send to peer
-    async function relay(peerId, event, data) {
-        await fetch(`${process.env.REACT_APP_API}/relay/${peerId}/${event}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${window.localStorage.getItem('user-token')}`
-            },
-            body: JSON.stringify(data)
-        });
-    }
-
     // Will run when I receive the session-description event
     async function sessionDescription(data) {
         let message = data;
-        let peer = peers[message.peer.id]; // get the peer related to this id stored on state
+        console.log(message, 'sessionDescription');
+        console.log(peers.current, 'sessionDescriptionPeers');
+        let peer = peers.current[message.peer.id]; // get the peer related to this id stored on state
 
         let remoteDescription = new RTCSessionDescription(message.data);// Use the offer to create the session description
         await peer.setRemoteDescription(remoteDescription);// set the remote description
@@ -188,31 +120,31 @@ function LoadingConnection() {
 
     function iceCandidate(data) {
         let message = data;
-        let peer = peers[message.peer.id];
+        let peer = peers.current[message.peer.id];
         peer.addIceCandidate(new RTCIceCandidate(message.data));
     }
 
     function removePeer(data) {
         let message = data;
-        if (peers[message.peer.id]) {
-            peers[message.peer.id].close();
+        console.log('REMOVENDO PEER', message.peer.id);
+        if (peers.current[message.peer.id]) {
+            peers.current[message.peer.id].close();
         }
-        setChannels((current) => {
-            const copy = {...current};
-            delete copy[`${message.peer.id}`];
-            return copy;
-        });
-        setPeers((current) => {
-            const copy = {...current};
-            delete copy[`${message.peer.id}`];
-            return copy;
-        });
+        delete channels.current[`${message.peer.id}`];
+        delete peers.current[`${message.peer.id}`];
         //logMessage(`${message.peer.username} saiu da sala!`, 'red');
     }
-
     
     return (
-        window.localStorage.getItem('username') ? <h1>Olá {window.localStorage.getItem('username')}</h1> : createUser()
+        window.localStorage.getItem('username') ? 
+            (loading.length === 6 ? 
+                <Game channels={channels.current} peers={peers.current} peerData={peerData} />
+            : <Container>
+                <Loading>
+                    {loaded}
+                </Loading>
+            </Container>)
+        : createUser()
     );
 }
 
