@@ -1,0 +1,33 @@
+body, html {
+  margin: 0;
+  height: 100% !important;
+  font-family: 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  animation-name: blur;
+  animation-duration: 1s;
+}
+
+body {
+  background-image: url('./icons/soccerball.svg');
+  background-size: 6rem;
+  animation-name: background-position;
+  animation-duration: 6s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+@keyframes background-position {
+  from   {background-position-x: 0; background-position-y: 0;}
+  to  {background-position-x: 6rem; background-position-y: -6rem;}
+}
+@keyframes blur {
+  from   {filter: blur(10px)}
+  to  {filter: blur(0)}
+}
+
+code {
+  font-family: 'Roboto', source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}

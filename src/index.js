@@ -1,13 +1,44 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
+import NameUser from './pages/NameUser/NameUser';
+import RoomList from './pages/RoomList/RoomList';
+import CreateRoom from './pages/CreateRoom/CreateRoom';
+import LoadingConnection from './pages/LoadingConnection/LoadingConnection';
 import reportWebVitals from './reportWebVitals';
+import {
+  createBrowserRouter,
+  RouterProvider,
+} from "react-router-dom";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <NameUser />,
+  },
+  {
+    path: "/list",
+    element: <RoomList />
+  },
+  {
+    path: "/create-room",
+    element: <CreateRoom />
+  },
+  {
+    path: "/:roomId",
+    element: <LoadingConnection />,
+    loader: async ({ request, params }) => {
+      return fetch(
+        `${process.env.REACT_APP_API}/${params.roomId}`,
+      );
+    },
+  }
+]);
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <RouterProvider router={router} />
   </React.StrictMode>
 );
 
