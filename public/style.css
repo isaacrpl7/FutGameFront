@@ -1,7 +1,7 @@
 body, html {
   margin: 0;
   height: 100% !important;
-  font-family: 'Roboto', 'Oxygen',
+  font-family: 'Quicksand','Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -28,6 +28,6 @@ body {
 }
 
 code {
-  font-family: 'Roboto', source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  font-family: 'Quicksand', 'Roboto', source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }

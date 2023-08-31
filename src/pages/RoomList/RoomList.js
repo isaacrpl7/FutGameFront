@@ -21,15 +21,18 @@ function UserList() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const createRoom = async () => {
+    const createRoom = () => {
         navigate('/create-room');
     }
-    const reload = async () => {
+    const reload = () => {
         window.location.reload();
+    }
+    const loadRoom = (roomId) => {
+        navigate('/' + roomId);
     }
 
     const roomItems = rooms.map((room) =>
-        <Item key={room.id}>
+        <Item onClick={() => {loadRoom(room.id)}} key={room.id}>
             <td>
                 <span>{room.name}</span>
             </td>

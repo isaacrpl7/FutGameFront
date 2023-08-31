@@ -50,8 +50,7 @@ function LoadingConnection() {
 
     function addPeer(data) {
         const {peer: peerToAdd, offer} = data;
-        console.log(peers.current, 'peers');
-        console.log('Adding: ', peerToAdd);
+
         // if incoming peer is already in context, cancel the operation
         if (peers.current[peerToAdd]) {
             return;
@@ -60,7 +59,6 @@ function LoadingConnection() {
         // setup peer connection
         let peer = new RTCPeerConnection(rtcConfig);
         peers.current[`${peerToAdd.id}`] = peer;
-        console.log('after adding to peers: ', peers.current);
     
         // handle ice candidate
         peer.onicecandidate = function (event) {
@@ -75,9 +73,7 @@ function LoadingConnection() {
             // create the data channel, map peer updates
             let channel = peer.createDataChannel('updates');
             channel.onmessage = function (event) {
-                //onPeerData(peerToAdd.id, event.data);
                 setPeerData([peerToAdd.id, event.data]);
-                console.log(peerToAdd.id, event.data);
             };
             channels.current[`${peerToAdd.id}`] = channel;
             createOfferAndSetLocalDescription(peerToAdd.id, peer);
@@ -87,7 +83,6 @@ function LoadingConnection() {
                 channels.current[`${peerToAdd.id}`] = event.channel;
                 event.channel.onmessage = function (evt) {
                     setPeerData([peerToAdd.id, evt.data]);
-                    console.log(peerToAdd.id, evt.data);
                 };
             };
         }
@@ -103,8 +98,6 @@ function LoadingConnection() {
     // Will run when I receive the session-description event
     async function sessionDescription(data) {
         let message = data;
-        console.log(message, 'sessionDescription');
-        console.log(peers.current, 'sessionDescriptionPeers');
         let peer = peers.current[message.peer.id]; // get the peer related to this id stored on state
 
         let remoteDescription = new RTCSessionDescription(message.data);// Use the offer to create the session description
@@ -126,7 +119,6 @@ function LoadingConnection() {
 
     function removePeer(data) {
         let message = data;
-        console.log('REMOVENDO PEER', message.peer.id);
         if (peers.current[message.peer.id]) {
             peers.current[message.peer.id].close();
         }

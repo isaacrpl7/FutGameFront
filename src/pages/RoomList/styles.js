@@ -77,6 +77,8 @@ export const CreateRoom = styled.button`
     width: 45%;
     height: 2rem;
     margin-bottom: 1rem;
+    font-family: 'Quicksand', 'Roboto', sans-serif;
+    font-weight: 600;
 
     &:hover {
         cursor: pointer;
@@ -91,6 +93,8 @@ export const RefreshRooms = styled.button`
     width: 45%;
     height: 2rem;
     margin-bottom: 1rem;
+    font-family: 'Quicksand', 'Roboto', sans-serif;
+    font-weight: 600;
 
     &:hover {
         cursor: pointer;

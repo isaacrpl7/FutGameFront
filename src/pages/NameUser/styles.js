@@ -20,7 +20,8 @@ export const Container = styled.div`
 `;
     
 export const Input = styled.input`
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Quicksand', 'Roboto', sans-serif;
+    font-weight: 600;
     border-radius: 1rem;
     height: 2rem;
     border: 2px solid black;
@@ -29,7 +30,8 @@ export const Input = styled.input`
 `;
     
 export const Button = styled.button`
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Quicksand', 'Roboto', sans-serif;
+    font-weight: 600;
     border: 2px solid black;
     border-radius: 1rem;
     height: 2rem;
@@ -52,7 +54,8 @@ export const Form = styled.form`
 `;
 
 export const Title = styled.h1`
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Quicksand', 'Roboto', sans-serif;
+    font-weight: 600;
     margin-top: 0;
     padding-top: 0;
 `;
